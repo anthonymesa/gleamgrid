@@ -1,5 +1,4 @@
 
-// use core::mem;
 use arc4::Arc4;
 use heapless::String;
 
@@ -15,13 +14,13 @@ const TRIBIT_ARRAY_SIZE: usize = (BOARD_SIZE * TRIBIT_WIDTH as usize) / 8; // Al
 
 #[derive(PartialEq)]
 enum State {
-    Error,
     Alpha,
     Beta,
     Gamma,
     Delta,
     Epsilon,
     End,
+    Error,
 }
 
 impl State {
@@ -68,7 +67,7 @@ struct RandomStateGenerator {
 
 impl RandomStateGenerator {
     fn new() -> Self {
-        RandomStateGenerator { prb_key: 123456789 }
+        RandomStateGenerator { prb_key: 1234556789 }
     }
 
     fn generate(&mut self) -> State {
@@ -89,9 +88,9 @@ impl RandomStateGenerator {
         
         let prb = output[0] % State::End.value();
 
-        self.prb_key = self.prb_key.wrapping_add(4321 * prb as u32);
+        self.prb_key = self.prb_key.wrapping_add(100);
 
-        return State::from(prb);
+        State::from(prb)
     }
 }
 
@@ -138,7 +137,7 @@ impl TribitFields {
             value |= (self.data[(byte_index + 1) as usize] & (mask >> (8 - bit_offset))) << (8 - bit_offset);
         }
 
-        return value;
+        value
     }
 
     pub fn to_string(&self) -> String<BOARD_SIZE> {
@@ -147,7 +146,8 @@ impl TribitFields {
             let char_digit = (b'0' + self.get(i)) as char;
             string.push(char_digit).unwrap();
         }
-        return string;
+
+        string
     }
 }
 
@@ -157,23 +157,26 @@ struct Board {
 }
 
 impl Board {
-    fn new() -> Self {
-        Board { 
+    fn new() -> Board {
+        let mut board = Board { 
             data: TribitFields::new(),
             rsg: RandomStateGenerator::new()
-        }
+        };
+
+        board.randomize();
+        board
     }
 
-    fn randomize(&mut self, rsg: &mut RandomStateGenerator) {
-        for i in 0..(BOARD_SIZE){
-            let new_value = ((self.data.get(i) + rsg.generate().value()) % State::End.value()) + 1;
+    fn randomize(&mut self) {
+        for i in 0..BOARD_SIZE {
+            // let new_value = (self.data.get(i) + self.rsg.generate().value()) % State::End.value();
+            let new_value = self.rsg.generate().value();
             self.data.set(i, new_value);
         }
     }
 
-    fn as_string(&mut self) -> String<BOARD_SIZE>{
-        let digit_string = self.data.to_string();
-        return digit_string
+    fn to_string(&self) -> String<BOARD_SIZE> {
+        self.data.to_string()
     }
 
     fn update(&mut self, island: &mut Island) {
@@ -202,19 +205,19 @@ impl Board {
     }
 
     fn get(&self, index: u8) -> State {
-        return State::from(self.data.get(index as usize));
+        State::from(self.data.get(index as usize))
     }
 
     pub fn coords_to_index(x: u8, y: u8) -> u8 {
-        return (y * BOARD_X) + x;
+        (y * BOARD_X) + x
     }
 
     pub fn index_to_coord_x(i: u8) -> u8 {
-        return i % BOARD_X;
+        i % BOARD_X
     }
 
     pub fn index_to_coord_y(i: u8) -> u8 {
-        return i / BOARD_X;
+        i / BOARD_X
     }
 
     fn overwrite_cell(&mut self, x: u8, y: u8, y_diff: u8) {
@@ -241,11 +244,15 @@ struct Island {
 
 impl Island{
     fn new() -> Self {
-        Island { 
+        let mut island = Island { 
             data: TribitFields::new(),
             traverse_index: 0, 
             append_index: 0
-        }
+        };
+    
+        island.clear();
+
+        island
     }
 
     fn set(&mut self, index: u8, value: u8) {
@@ -446,7 +453,13 @@ struct Isles {
 
 impl Isles {
     fn new() -> Self {
-        Isles { data: TribitFields::new() }
+        let mut isles = Isles { 
+            data: TribitFields::new() 
+        };
+
+        isles.clear();
+
+        isles
     }
 
     fn set(&mut self, index: u8, value: u8) {
@@ -528,23 +541,25 @@ impl Game {
         }
     }
 
-    pub fn update_board(&mut self) { 
-        self.board.update(&mut self.island);
-    }
-
     pub fn select(&mut self, x: u8, y: u8) {
         self.updated = false;
         let i: u8 = Board::coords_to_index(x, y);
         if !self.isles.island_at(i) {
             return;
         }
-        self.island.update(i, &self.board);
         self.board.update(&mut self.island);
+        self.island.update(i, &self.board);
         self.isles.update(&mut self.island, &self.board);
         self.updated = true;
     }
 
-    pub fn board_as_string(&mut self) -> String<BOARD_SIZE>{
-        return self.board.as_string();
+    pub fn for_each(&self, runnable: &dyn Fn(u8, u8, char)) {
+        for i in 0..BOARD_SIZE {
+            let x = Board::index_to_coord_x(i as u8);
+            let y = Board::index_to_coord_y(i as u8);
+            let state = self.board.get(i as u8).ascii();
+            runnable(x, y, state);
+        }
     }
 }
+

@@ -1,10 +1,58 @@
 #![no_std]
 #![no_main]
+#![feature(abi_avr_interrupt)]
 
-use heapless::String;
 use core::panic::PanicInfo;
 
+use avr_device::interrupt;
+use core::cell::RefCell;
+
+type Console = arduino_hal::hal::usart::Usart0<arduino_hal::DefaultClock>;
+static CONSOLE: interrupt::Mutex<RefCell<Option<Console>>> =
+    interrupt::Mutex::new(RefCell::new(None));
+
 mod gleamgrid;
+
+macro_rules! print {
+    ($($t:tt)*) => {
+        interrupt::free(
+            |cs| {
+                if let Some(console) = CONSOLE.borrow(cs).borrow_mut().as_mut() {
+                    let _ = ufmt::uwrite!(console, $($t)*);
+                }
+            },
+        )
+    };
+}
+
+macro_rules! println {
+    ($($t:tt)*) => {
+        interrupt::free(
+            |cs| {
+                if let Some(console) = CONSOLE.borrow(cs).borrow_mut().as_mut() {
+                    let _ = ufmt::uwriteln!(console, $($t)*);
+                }
+            },
+        )
+    };
+}
+
+fn put_console(console: Console) {
+    interrupt::free(|cs| {
+        *CONSOLE.borrow(cs).borrow_mut() = Some(console);
+    })
+}
+
+fn subfunction() {
+    println!("We can also call println!() in a subfunction!");
+}
+
+fn demo_print_without_ln() {
+    for i in 0..10 {
+        print!("{} ", i);
+    }
+    println!("numbers!");
+}
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -15,28 +63,23 @@ fn main() -> ! {
     let mut gleamgrid: gleamgrid::Game = gleamgrid::Game::new();
 
     let mut led = pins.d13.into_output();
-    
+
+    let serial = arduino_hal::default_serial!(dp, pins, 57600);
+    put_console(serial);
+
+    gleamgrid.for_each(&|x, y, v| {
+        print!("{} ", v);
+        if x == 7 {
+            println!("")
+        }
+    });
+
+    // println!("Hello from main!");
+    // subfunction();
+    // demo_print_without_ln();
+
     loop {
 
-        let board_string: String<56> = gleamgrid.board_as_string();
-
-        for ch in board_string.chars() {
-            if let Some(digit) = ch.to_digit(10) {
-                if digit <= 5 {
-                    let number = digit as u8;
-                    for _ in 0..(number * 2) {
-                        led.toggle();
-                        arduino_hal::delay_ms(100);
-                    }          
-                }
-            }
-
-            arduino_hal::delay_ms(500);
-        }
-
-        arduino_hal::delay_ms(2000);
-
-        gleamgrid.update_board();
     }
 }
 
