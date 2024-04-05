@@ -20,7 +20,9 @@ Rust project for the _Arduino Uno_.
 
 ## Hardware
 
-https://learn.sparkfun.com/tutorials/button-pad-hookup-guide
+- https://learn.sparkfun.com/tutorials/button-pad-hookup-guide
+- https://bettersilicone.en.made-in-china.com/product/ZFOfeRTrnuVP/China-LED-Compatible-Transparent-Conductive-4X4-Keypad-Silicone-Rubber-Button-Pad-for-MIDI-Controller-Keyboard.html
+- https://www.adafruit.com/product/3954
 
 ## License
 Licensed under either of
