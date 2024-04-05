@@ -24,7 +24,8 @@ Rust project for the _Arduino Uno_.
 - https://bettersilicone.en.made-in-china.com/product/ZFOfeRTrnuVP/China-LED-Compatible-Transparent-Conductive-4X4-Keypad-Silicone-Rubber-Button-Pad-for-MIDI-Controller-Keyboard.html
 - https://www.adafruit.com/product/3954
 - https://crates.io/crates/trellis_m4
-
+- https://llllllll.co/t/diy-monome-compatible-grid-w-adafruit-neotrellis/28106/6?page=65
+  
 ## License
 Licensed under either of
 
