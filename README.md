@@ -18,6 +18,10 @@ Rust project for the _Arduino Uno_.
 [`avr-hal` README]: https://github.com/Rahix/avr-hal#readme
 [`ravedude`]: https://crates.io/crates/ravedude
 
+## Hardware
+
+https://learn.sparkfun.com/tutorials/button-pad-hookup-guide
+
 ## License
 Licensed under either of
 
